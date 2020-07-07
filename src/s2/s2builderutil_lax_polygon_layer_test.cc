@@ -21,6 +21,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <gtest/gtest.h>
 #include "s2/base/integral_types.h"
@@ -52,6 +53,8 @@ string ToString(DegenerateBoundaries degenerate_boundaries) {
     case DegenerateBoundaries::DISCARD_HOLES: return "DISCARD_HOLES";
     case DegenerateBoundaries::DISCARD_SHELLS: return "DISCARD_SHELLS";
     case DegenerateBoundaries::KEEP: return "KEEP";
+    default:
+      throw std::runtime_error("Unrecognized DegenerateBoundaries value!");
   }
 }
 
