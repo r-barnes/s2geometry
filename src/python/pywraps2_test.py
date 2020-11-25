@@ -41,6 +41,19 @@ class PyWrapS2TestCase(unittest.TestCase):
     self.assertLess(cell, cell.next())
     self.assertGreater(cell.next(), cell)
 
+  def testS2CellIdFromToTokenIsWrappedCorrectly(self):
+    cell = s2.S2CellId.FromToken("487604c489f841c3")
+    self.assertEqual(cell.ToToken(), "487604c489f841c3")
+    self.assertEqual(cell.id(), 0x487604c489f841c3)
+
+    cell = s2.S2CellId.FromToken("487")
+    self.assertEqual(cell.ToToken(), "487")
+    self.assertEqual(cell.id(), 0x4870000000000000)
+
+    cell = s2.S2CellId.FromToken("this is invalid")
+    self.assertEqual(cell.ToToken(), "X")
+    self.assertEqual(cell.id(), 0)
+
   def testS2CellIdGetEdgeNeighborsIsWrappedCorrectly(self):
     cell = s2.S2CellId(0x466d319000000000)
     expected_neighbors = [s2.S2CellId(0x466d31b000000000),
@@ -48,6 +61,19 @@ class PyWrapS2TestCase(unittest.TestCase):
                           s2.S2CellId(0x466d323000000000),
                           s2.S2CellId(0x466d31f000000000)]
     neighbors = cell.GetEdgeNeighbors()
+    self.assertEqual(neighbors, expected_neighbors)
+
+  def testS2CellIdGetAllNeighborsIsWrappedCorrectly(self):
+    cell = s2.S2CellId(0x6aa7590000000000)
+    expected_neighbors = (s2.S2CellId(0x2ab3530000000000),
+                          s2.S2CellId(0x2ab34b0000000000),
+                          s2.S2CellId(0x2ab34d0000000000),
+                          s2.S2CellId(0x6aa75b0000000000),
+                          s2.S2CellId(0x6aa7570000000000),
+                          s2.S2CellId(0x6aa75f0000000000),
+                          s2.S2CellId(0x6aa7510000000000),
+                          s2.S2CellId(0x6aa75d0000000000))
+    neighbors = cell.GetAllNeighbors(cell.level())
     self.assertEqual(neighbors, expected_neighbors)
 
   def testS2CellIdIntersectsIsTrueForOverlap(self):
@@ -89,6 +115,13 @@ class PyWrapS2TestCase(unittest.TestCase):
     trondheim = s2.S2LatLng.FromDegrees(63.431052, 10.395083)
     self.assertTrue(cell_union.Contains(s2.S2CellId(trondheim)))
 
+    # Init() calls Normalized, so cell_ids() are normalized.
+    cell_union2 = s2.S2CellUnion.FromNormalized(cell_union.cell_ids())
+    # There is no S2CellUnion::Equals, and cell_ids is a non-iterable
+    # SWIG object, so just perform the same checks again.
+    self.assertEqual(cell_union2.num_cells(), 2)
+    self.assertTrue(cell_union2.Contains(s2.S2CellId(trondheim)))
+
   def testS2PolygonIsWrappedCorrectly(self):
     london = s2.S2LatLng.FromDegrees(51.5001525, -0.1262355)
     polygon = s2.S2Polygon(s2.S2Cell(s2.S2CellId(london)))
@@ -104,8 +137,12 @@ class PyWrapS2TestCase(unittest.TestCase):
     self.assertEqual(0, loop.depth())
     self.assertFalse(loop.is_hole())
     self.assertEqual(4, loop.num_vertices())
+    self.assertTrue(loop.IsNormalized())
     point = london.ToPoint()
     self.assertTrue(loop.Contains(point))
+
+  def testS2LoopUsesValueEquality(self):
+    self.assertEqual(s2.S2Loop(), s2.S2Loop())
 
   def testS2PolygonCopiesLoopInConstructorBecauseItTakesOwnership(self):
     london = s2.S2LatLng.FromDegrees(51.5001525, -0.1262355)
@@ -192,6 +229,9 @@ class PyWrapS2TestCase(unittest.TestCase):
     line.InitFromS2Points(list_points)
     self.assertAlmostEqual(20.0, line.GetLength().degrees())
 
+  def testS2PolylineUsesValueEquality(self):
+    self.assertEqual(s2.S2Polyline(), s2.S2Polyline())
+
   def testS2PointsCanBeNormalized(self):
     line = s2.S2Polyline()
     line.InitFromS2LatLngs([s2.S2LatLng.FromDegrees(37.794484, -122.394871),
@@ -213,6 +253,9 @@ class PyWrapS2TestCase(unittest.TestCase):
                             s2.S2LatLng.FromDegrees(51.5, -0.125)])
     intersections = polygon.IntersectWithPolyline(line)
     self.assertEqual(1, len(intersections))
+
+  def testS2PolygonUsesValueEquality(self):
+    self.assertEqual(s2.S2Polygon(), s2.S2Polygon())
 
   def testCrossingSign(self):
     a = s2.S2LatLng.FromDegrees(-1, 0).ToPoint()

@@ -5,6 +5,7 @@
 
 %{
 #include <sstream>
+#include <string>
 
 #include "s2/s2cell_id.h"
 #include "s2/s2region.h"
@@ -301,13 +302,15 @@ class S2Point {
 %unignore S2CellId;
 %unignore S2CellId::S2CellId;
 %unignore S2CellId::~S2CellId;
+%unignore S2CellId::AppendAllNeighbors(int, std::vector<S2CellId>*) const;
+%rename(GetAllNeighbors) S2CellId::AppendAllNeighbors(int level, std::vector<S2CellId>* output) const;
 %unignore S2CellId::Begin;
 %unignore S2CellId::End;
 %unignore S2CellId::FromFaceIJ(int, int, int);
 %unignore S2CellId::FromFacePosLevel(int, uint64, int);
 %unignore S2CellId::FromLatLng;
 %unignore S2CellId::FromPoint;
-%unignore S2CellId::FromToken;
+%unignore S2CellId::FromToken(const std::string&);
 %unignore S2CellId::GetCenterSiTi(int*, int*) const;
 %unignore S2CellId::GetEdgeNeighbors;
 %unignore S2CellId::ToFaceIJOrientation(int*, int*, int*) const;
@@ -343,6 +346,7 @@ class S2Point {
 %unignore S2CellUnion::Denormalize(int, int, std::vector<S2CellId>*) const;
 %unignore S2CellUnion::Encode;
 %unignore S2CellUnion::ExactArea;
+%unignore S2CellUnion::FromNormalized(std::vector<S2CellId>);
 %unignore S2CellUnion::GetCapBound() const;
 %unignore S2CellUnion::GetDifference;
 %unignore S2CellUnion::GetRectBound;
@@ -429,6 +433,7 @@ class S2Point {
 %unignore S2Loop::GetS2LatLngVertex;
 %unignore S2Loop::Init;
 %unignore S2Loop::Intersects;
+%unignore S2Loop::IsNormalized() const;
 %unignore S2Loop::IsValid;
 %unignore S2Loop::MayIntersect(const S2Cell&) const;
 %unignore S2Loop::Normalize;
@@ -531,6 +536,18 @@ class S2Point {
   }
 %enddef
 
+%define USE_EQUALS_FN_FOR_EQ_AND_NE(type)
+  %extend type {
+    bool __eq__(const type& other) {
+      return $self->Equals(&other);
+    }
+
+    bool __ne__(const type& other) {
+      return !$self->Equals(&other);
+    }
+  }
+%enddef
+
 %define USE_EQUALS_FOR_EQ_AND_NE(type)
   %extend type {
     bool __eq__(const type& other) {
@@ -576,3 +593,7 @@ USE_HASH_FOR_TYPE(S2CellId, S2CellIdHash)
 
 USE_EQUALS_FOR_EQ_AND_NE(S1Angle)
 USE_COMPARISON_FOR_LT_AND_GT(S1Angle)
+
+USE_EQUALS_FN_FOR_EQ_AND_NE(S2Loop)
+USE_EQUALS_FN_FOR_EQ_AND_NE(S2Polygon)
+USE_EQUALS_FN_FOR_EQ_AND_NE(S2Polyline)
